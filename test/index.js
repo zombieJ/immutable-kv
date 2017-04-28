@@ -83,6 +83,65 @@ describe('KV', () => {
 		assert.equal(kv.get('not exist'), undefined);
 	});
 
+	it('setKey', () => {
+		const kv = new KV('aaa', 'bbb');
+		const kv2 = kv.setKey('ccc');
+
+		assert.equal(kv.key, 'aaa');
+		assert.equal(kv2.key, 'ccc');
+		assert.equal(kv.value, 'bbb');
+		assert.equal(kv2.value, 'bbb');
+	});
+
+	it('setValue', () => {
+		const kv = new KV('aaa', 'bbb');
+		const kv2 = kv.setValue('ccc');
+
+		assert.equal(kv.key, 'aaa');
+		assert.equal(kv2.key, 'aaa');
+		assert.equal(kv.value, 'bbb');
+		assert.equal(kv2.value, 'ccc');
+	});
+
+	it('set', () => {
+		const kv_1_1_0 = new KV('l_1_1_0', 'aaa');
+
+		const kv_1_0 = new KV('l_1_0', '10');
+		const list_1_1 = [kv_1_1_0];
+		const kv_1_1 = new KV('l_1_1', list_1_1);
+
+		const kv_0 = new KV('l_0', '000');
+		const list_1 = [kv_1_0, kv_1_1];
+		const kv_1 = new KV('l_1', list_1);
+
+		const list = [kv_0, kv_1];
+		const kv = new KV('root', list);
+
+		const u_kv = kv.set([], '123');
+		assert.equal(u_kv.value, '123');
+		assert.equal(kv.value, list);
+
+		const u_kv_0 = kv.set([0], 'test');
+		assert.equal(u_kv_0.get([0]), 'test');
+		assert.equal(kv.get([0]), '000');
+
+		const u_kv_1 = kv.set(['L_1'], 'test2');
+		assert.equal(u_kv_1.get([1]), 'test2');
+		assert.equal(kv.get([1]), list_1);
+
+		const u_kv_1_0 = kv.set(['l_1', 0], 'happy');
+		assert.equal(u_kv_1_0.get([1, 0]), 'happy');
+		assert.equal(kv.get([1, 0]), '10');
+
+		const u_kv_1_1 = kv.set([1, 'l_1_1'], 'sad');
+		assert.equal(u_kv_1_1.get([1, 1]), 'sad');
+		assert.equal(kv.get([1, 1]), list_1_1);
+
+		const u_kv_1_1_0 = kv.set([1, 1, 0], 'end');
+		assert.equal(u_kv_1_1_0.get([1, 1, 0]), 'end');
+		assert.equal(kv.get([1, 1, 'l_1_1_0']), 'aaa');
+	});
+
 	it('parse: key - value', () => {
 		const kv1 = KV.parse('"a""b"');
 		assert.equal(kv1.key, 'a');

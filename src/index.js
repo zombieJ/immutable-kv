@@ -90,7 +90,7 @@ function getKV(arr, start, end) {
 
 		if (kv.key === undefined) {
 			if (strObj) {
-				kv.key = strObj.str;
+				kv._key = strObj.str;
 				startLoc = strObj.start;
 				i = strObj.end;
 			} else {
@@ -99,10 +99,10 @@ function getKV(arr, start, end) {
 			}
 		} else if (strObj || listObj) {
 			if (strObj) {
-				kv.value = strObj.str;
+				kv._value = strObj.str;
 				endLoc = strObj.end;
 			} else {
-				kv.value = listObj.list;
+				kv._value = listObj.list;
 				endLoc = listObj.end;
 			}
 			break;
@@ -122,9 +122,10 @@ function getKV(arr, start, end) {
 }
 
 class KV {
-	constructor(key, value) {
-		this.key = key;
-		this.value = value;
+	constructor(key, value, comment) {
+		this._key = key;
+		this._value = value;
+		this._comment = comment;
 	}
 
 	static parse(str, path) {
@@ -134,6 +135,22 @@ class KV {
 
 	get isList() {
 		return Array.isArray(this.value);
+	}
+
+	get key() {
+		return this._key;
+	}
+
+	get value() {
+		return this._value;
+	}
+
+	get comment() {
+		return this._comment;
+	}
+
+	clone() {
+		return new KV(this.key, this.value, this.comment);
 	}
 
 	getIndex(key) {
@@ -162,6 +179,36 @@ class KV {
 	get(path) {
 		const kv = this.getKV(path);
 		return kv ? kv.value : undefined;
+	}
+
+	setKey(val) {
+		const kv = this.clone();
+		kv._key = val;
+		return kv;
+	}
+
+	setValue(val) {
+		const kv = this.clone();
+		kv._value = val;
+		return kv;
+	}
+
+	set(path, val) {
+		const myPath = Array.isArray(path) ? path : [path];
+		if (myPath.length === 0) return this.setValue(val);
+
+		const [key, ...restPath] = myPath;
+		const index = this.getIndex(key);
+		if (index === -1) {
+			console.error('[KV] Path not found:', key, this.value);
+			return this;
+		}
+
+		const kv = this.clone();
+		kv._value = kv._value.concat();
+		kv._value[index] = kv._value[index].set(restPath, val);
+
+		return kv;
 	}
 }
 
