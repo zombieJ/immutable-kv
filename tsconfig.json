@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"target": "es2017",
+		"declaration": true,
 		"noImplicitAny": false,
 		"module": "commonjs",
 		"removeComments": true,

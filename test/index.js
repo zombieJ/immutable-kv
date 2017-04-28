@@ -1,5 +1,5 @@
 import { assert, deepEqual } from 'chai';
-import KV from '../src/index';
+import KV from '../js/index';
 
 describe('KV Test', () => {
 	it('isList', () => {

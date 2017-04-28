@@ -4,8 +4,8 @@
   "description": "Valve KV parser",
   "main": "src/index.js",
   "scripts": {
-    "build": "tsc",
-    "test": "npm build & mocha --recursive --compilers js:babel-core/register"
+    "pretest": "tsc",
+    "test": "mocha --recursive --compilers js:babel-core/register"
   },
   "author": "",
   "license": "ISC",
