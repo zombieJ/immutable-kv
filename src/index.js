@@ -3,6 +3,52 @@ function isEmpty(arr, i) {
 	if (['\t', ' ', '\r', '\n'].includes(char)) return true;
 }
 
+function getComment(arr, start, end) {
+	if (arr[start] !== '/' || arr[start + 1] !== '/') return null;
+
+	let comment = '';
+	let endLoc = end;
+
+	for (let i = start + 2; i < end; i += 1) {
+		const c = arr[i];
+		if (c !== '\r' && c !== '\n') {
+			comment += c;
+		} else {
+			endLoc = i - 1;
+			break;
+		}
+	}
+
+	return {
+		start,
+		end: endLoc,
+		comment: comment.replace(/^\s/, ''),
+	};
+}
+
+/***
+ * Will check comment until new line
+ * @param arr
+ * @param start
+ * @param end
+ */
+function getConnectComment(arr, start, end) {
+	let commentObj = undefined;
+
+	for (let i = start; i < end; i += 1) {
+		const c = arr[i];
+		if (c === '\r' || c === '\n') break;
+
+		if (c === '/' && arr[i + 1] === '/') {
+			commentObj = getComment(arr, i, end);
+		} else if (c !== '\t' && c !== ' ') {
+			break;
+		}
+	}
+
+	return commentObj;
+}
+
 function getStr(arr, start, end) {
 	if (arr[start] !== '"') return null;
 	let str = '';
@@ -79,12 +125,25 @@ function getList(arr, start, end) {
 
 function getKV(arr, start, end) {
 	const kv = new KV();
+	kv._key = undefined;
+	kv._value = undefined;
+	const commentList = [];
+
 	let startLoc = start;
 	let endLoc = end;
 
 	for (let i = start; i < end; i += 1) {
 		if (isEmpty(arr, i)) continue;
 
+		// Comment
+		const commentObj = getComment(arr, i, end);
+		if (commentObj) {
+			commentList.push(commentObj.comment);
+			i = commentObj.end;
+			continue;
+		}
+
+		// Key, value
 		const strObj = getStr(arr, i, end);
 		const listObj = getList(arr, i, end);
 
@@ -105,6 +164,11 @@ function getKV(arr, start, end) {
 				kv._value = listObj.list;
 				endLoc = listObj.end;
 			}
+			const connectCommentObj = getConnectComment(arr, endLoc + 1, end);
+			if (connectCommentObj) {
+				commentList.push(connectCommentObj.comment);
+				endLoc = connectCommentObj.end;
+			}
 			break;
 		} else {
 			console.error('[KV] value not mapping:', i);
@@ -114,6 +178,8 @@ function getKV(arr, start, end) {
 
 	if (!kv.key || !kv.value) return null;
 
+	kv._comment = commentList.join('\n');
+
 	return {
 		kv,
 		start: startLoc,
@@ -122,7 +188,7 @@ function getKV(arr, start, end) {
 }
 
 class KV {
-	constructor(key, value, comment) {
+	constructor(key = '', value = '', comment = '') {
 		this._key = key;
 		this._value = value;
 		this._comment = comment;
@@ -194,8 +260,17 @@ class KV {
 	}
 
 	set(path, val) {
-		const myPath = Array.isArray(path) ? path : [path];
-		if (myPath.length === 0) return this.setValue(val);
+		let _path = path;
+		let _val = val;
+
+		if (arguments.length === 1) {
+			console.warn('[KV] Set accept 2 params with (path, value). If you want to set value, call setValue instead.');
+			_path = [];
+			_val = path;
+		}
+
+		const myPath = Array.isArray(_path) ? _path : [_path];
+		if (myPath.length === 0) return this.setValue(_val);
 
 		const [key, ...restPath] = myPath;
 		const index = this.getIndex(key);
@@ -206,7 +281,7 @@ class KV {
 
 		const kv = this.clone();
 		kv._value = kv._value.concat();
-		kv._value[index] = kv._value[index].set(restPath, val);
+		kv._value[index] = kv._value[index].set(restPath, _val);
 
 		return kv;
 	}
