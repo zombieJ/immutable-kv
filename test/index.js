@@ -1,7 +1,7 @@
 import { assert, deepEqual } from 'chai';
 import KV from '../src/index';
 
-describe('KV', () => {
+describe('KV Test', () => {
 	it('isList', () => {
 		const kv1 = new KV('name', 'value');
 		assert.equal(kv1.key, 'name');
@@ -34,7 +34,7 @@ describe('KV', () => {
 		assert.equal(kv.getIndex('not exist'), -1);
 	});
 
-	it('getKV & get', () => {
+	it('getKV & get & getPathValue', () => {
 		const kv_2_1 = new KV('l_2_1', '21');
 		const kv_2_2 = new KV('l_2_2', '22');
 		const kv_1 = new KV('l_1', '111');
@@ -71,8 +71,8 @@ describe('KV', () => {
 		assert.equal(kv.get([1, 1]), '22');
 		assert.equal(kv.get([1, 2]), undefined);
 
-		assert.equal(kv.get('l_1'), '111');
-		assert.equal(kv.get('l_2'), kv_2.value);
+		assert.equal(kv.getPathValue('l_1'), '111');
+		assert.equal(kv.getPathValue('l_2'), kv_2.value);
 		assert.equal(kv.get('l_3'), '333');
 		assert.equal(kv.get(['l_1', 0]), undefined);
 		assert.equal(kv.get(['l_2', 0]), '21');
@@ -103,7 +103,7 @@ describe('KV', () => {
 		assert.equal(kv2.value, 'ccc');
 	});
 
-	it('set', () => {
+	it('set || setPathValue', () => {
 		const kv_1_1_0 = new KV('l_1_1_0', 'aaa');
 
 		const kv_1_0 = new KV('l_1_0', '10');
@@ -137,7 +137,7 @@ describe('KV', () => {
 		assert.equal(u_kv_1_1.get([1, 1]), 'sad');
 		assert.equal(kv.get([1, 1]), list_1_1);
 
-		const u_kv_1_1_0 = kv.set([1, 1, 0], 'end');
+		const u_kv_1_1_0 = kv.setPathValue([1, 1, 0], 'end');
 		assert.equal(u_kv_1_1_0.get([1, 1, 0]), 'end');
 		assert.equal(kv.get([1, 1, 'l_1_1_0']), 'aaa');
 	});
@@ -181,6 +181,14 @@ describe('KV', () => {
 		assert.equal(kv2.getKV(2).key, 'ccc');
 		assert.equal(kv2.get([2, 'DDD']), '444');
 		assert.equal(kv2.get([2, 'eee']), '555');
+
+		const kv3 = KV.parse(`"aaa"{
+			"bbb" {
+				"ccc" ""
+			}
+		}`);
+		assert.equal(kv3.key, 'aaa');
+		assert.equal(kv3.getKV(0).key, 'bbb');
 	});
 
 	it('parse: comment', () => {
@@ -237,5 +245,48 @@ describe('KV', () => {
 		assert.equal(kv4.getKV([1]).value, '3');
 		assert.equal(kv4.getKV(['d']).value, '4');
 		assert.equal(kv4.getKV(['d']).comment, 'bad');
+	});
+
+	it('setPathKey', () => {
+		const str1 = `"aaa""111"`;
+		const kv1 = KV.parse(str1);
+		const u_kv1 = kv1.setPathKey([], 'bbb');
+		assert.equal(kv1.key, 'aaa');
+		assert.equal(kv1.value, '111');
+		assert.equal(u_kv1.key, 'bbb');
+		assert.equal(u_kv1.value, '111');
+
+		const str2 = `
+		"l0"{
+			"l0.0"{
+				"l0.0.0" "233"
+			}
+		}
+		
+		`;
+		const kv2 = KV.parse(str2);
+		const u_kv2_0_0 = kv2.setPathKey('l0.0', 'l1.1');
+		assert.equal(kv2.key, 'l0');
+		assert.isUndefined(u_kv2_0_0.getPathValue('l0.0'));
+		assert.isDefined(u_kv2_0_0.getPathValue('l1.1'));
+		assert.isDefined(kv2.getPathValue('l0.0'));
+
+		const u_kv2_0_0_0 = kv2.setPathKey(['l0.0', 'L0.0.0'], 'l1.1.1');
+		assert.isDefined(kv2.getPathValue(['l0.0']));
+		assert.isDefined(kv2.getPathValue(['l0.0', 'l0.0.0']));
+		assert.isDefined(u_kv2_0_0_0.getPathValue(['l0.0']));
+		assert.isDefined(u_kv2_0_0_0.getPathValue(['l0.0', 'l1.1.1']));
+	});
+
+	it('setPathComment', () => {
+		const str1 = `"aaa"{
+			"bbb" {
+				"ccc" ""//233
+			}
+		}`;
+		const kv1 = KV.parse(str1);
+		const u_kv1 = kv1.setPathComment(['BBB', 'CCC'], 'good show');
+		assert.equal(kv1.getKV(['BBB', 'CCC']).comment, '233');
+		assert.equal(u_kv1.getKV(['BBB', 'CCC']).comment, 'good show');
 	});
 });

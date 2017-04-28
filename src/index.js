@@ -176,7 +176,7 @@ function getKV(arr, start, end) {
 		}
 	}
 
-	if (!kv.key || !kv.value) return null;
+	if (kv.key === undefined || kv.value === undefined) return null;
 
 	kv._comment = commentList.join('\n');
 
@@ -259,6 +259,12 @@ class KV {
 		return kv;
 	}
 
+	setComment(val) {
+		const kv = this.clone();
+		kv._comment = val;
+		return kv;
+	}
+
 	set(path, val) {
 		let _path = path;
 		let _val = val;
@@ -282,6 +288,50 @@ class KV {
 		const kv = this.clone();
 		kv._value = kv._value.concat();
 		kv._value[index] = kv._value[index].set(restPath, _val);
+
+		return kv;
+	}
+
+	getPathValue(path) {
+		return this.get(path);
+	}
+
+	setPathValue(path, val) {
+		return this.set(path, val);
+	}
+
+	setPathKey(path, val) {
+		const myPath = Array.isArray(path) ? path : [path];
+		if (myPath.length === 0) return this.setKey(val);
+
+		const [key, ...restPath] = myPath;
+		const index = this.getIndex(key);
+		if (index === -1) {
+			console.error('[KV] Path not found:', key, this.value);
+			return this;
+		}
+
+		const kv = this.clone();
+		kv._value = kv._value.concat();
+		kv._value[index] = kv._value[index].setPathKey(restPath, val);
+
+		return kv;
+	}
+
+	setPathComment(path, val) {
+		const myPath = Array.isArray(path) ? path : [path];
+		if (myPath.length === 0) return this.setComment(val);
+
+		const [key, ...restPath] = myPath;
+		const index = this.getIndex(key);
+		if (index === -1) {
+			console.error('[KV] Path not found:', key, this.value);
+			return this;
+		}
+
+		const kv = this.clone();
+		kv._value = kv._value.concat();
+		kv._value[index] = kv._value[index].setPathComment(restPath, val);
 
 		return kv;
 	}
