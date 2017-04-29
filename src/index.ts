@@ -1,23 +1,84 @@
-export interface BaseOption {
-	encoding?: string,
-	skipBase?: boolean,
-	skipFail?: boolean,
-}
-
+// ======================================================================
+// =                             KVFileInfo                             =
+// ======================================================================
 export class KVFileInfo {
-	kv: KV;
-	path: string = '';
-	baseList: Array<KVFileInfo> = [];
+	_kv: KV;
+	_path: string = '';
+	_baseList: Array<KVFileInfo> = [];
 
-	constructor(kv, path) {
-		this.kv = kv;
-		this.path = path;
+	get kv(): KV {
+		return this._kv;
+	}
+
+	get path(): string {
+		return this._path;
+	}
+
+	get baseList():Array<KVFileInfo> {
+		return this._baseList;
+	}
+
+	constructor(kv, path, baseList: Array<KVFileInfo> = []) {
+		this._kv = kv;
+		this._path = path;
+		this._baseList = baseList;
+	}
+
+	clone(): KVFileInfo {
+		return new KVFileInfo(this.kv, this.path, this.baseList.concat());
+	}
+
+	getBaseIndex(target: KV | KVFileInfo): number {
+		let kv: KV;
+		if (target instanceof KV) {
+			kv = target;
+		} else if (target instanceof KVFileInfo) {
+			kv = target.kv;
+		}
+
+		return this.baseList.findIndex(info => info.kv === kv);
+	}
+
+	setKV(kv: KV): KVFileInfo {
+		const info = this.clone();
+		info._kv = kv;
+		return info;
+	}
+
+	setBase(origin: number | KV | KVFileInfo, target: KV | KVFileInfo): KVFileInfo {
+		const index = typeof origin === 'number' ? origin : this.getBaseIndex(origin);
+		const oriBaseInfo = this.baseList[index];
+		if (!oriBaseInfo) return this;
+
+		let targetInfo: KVFileInfo;
+		if (target instanceof KVFileInfo) {
+			targetInfo = target;
+		} else {
+			targetInfo = oriBaseInfo.setKV(target);
+		}
+		const info = this.clone();
+		info.baseList[index] = targetInfo;
+		return info;
+	}
+
+	save(path) {
+		const PATH = require('path');
+		const myPath = path.resolve(path);
 	}
 }
 
 	function isEmpty(arr, i) {
 	const char = arr[i];
 	if (['\t', ' ', '\r', '\n'].includes(char)) return true;
+}
+
+// ======================================================================
+// =                                 KV                                 =
+// ======================================================================
+export interface BaseOption {
+	encoding?: string,
+	skipBase?: boolean,
+	skipFail?: boolean,
 }
 
 function getComment(arr, start, end) {
