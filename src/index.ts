@@ -1,6 +1,10 @@
 // ======================================================================
 // =                             KVFileInfo                             =
 // ======================================================================
+export interface SaveOption {
+	encoding?: string
+}
+
 export class KVFileInfo {
 	_kv: KV;
 	_path: string = '';
@@ -66,9 +70,42 @@ export class KVFileInfo {
 		return info;
 	}
 
-	save(path) {
-		const PATH = require('path');
-		const myPath = path.resolve(path);
+	save(path: string | SaveOption, option: SaveOption) {
+		let _path: string;
+		let _option: SaveOption;
+
+		if (path instanceof SaveOption) {
+			_option = path;
+			_path = undefined;
+		} else if (option) {
+			_option = option;
+			_path = path;
+		}
+		_path = _path || this._path;
+		const { encoding = 'utf8' } = _option || {};
+
+		return new Promise((resolve, reject) => {
+			const FS = require('fs');
+			const PATH = require('path');
+			const MK_DIR = require('mkdirp');
+			let targetPath = PATH.resolve(_path);
+
+			if (this.relativePath) {
+				targetPath = PATH.resolve(_path, this.relativePath);
+			}
+
+			const dirName = PATH.dirname(targetPath);
+			MK_DIR(dirName, function (err) {
+				if (err) {
+					reject(err);
+				} else {
+					FS.writeFile(targetPath, this.toString(), encoding, (err) => {
+						if (err) reject(err);
+						resolve();
+					});
+				}
+			});
+		});
 	}
 }
 
