@@ -1,9 +1,9 @@
 // ======================================================================
 // =                             KVFileInfo                             =
 // ======================================================================
-import {type} from "os";
 export interface SaveOption {
-	encoding?: string
+	encoding?: string;
+	tabWidth?: number;
 }
 
 export class KVFileInfo {
@@ -83,7 +83,7 @@ export class KVFileInfo {
 			_path = path;
 		}
 		_path = _path || this._path;
-		const { encoding = 'utf8' } = _option || {};
+		const { encoding = 'utf8', tabWidth = 4 } = _option || {};
 
 		return new Promise((resolve, reject) => {
 			const FS = require('fs');
@@ -92,7 +92,7 @@ export class KVFileInfo {
 			let targetPath = PATH.resolve(_path);
 
 			if (this.relativePath) {
-				targetPath = PATH.resolve(_path, this.relativePath);
+				targetPath = PATH.resolve(targetPath, this.relativePath);
 			}
 
 			const dirName = PATH.dirname(targetPath);
@@ -100,18 +100,30 @@ export class KVFileInfo {
 				if (err) {
 					reject(err);
 				} else {
-					console.log('~>', targetPath);
-					FS.writeFile(targetPath, this.toString(), encoding, (err) => {
-						if (err) reject(err);
-						resolve();
+					FS.writeFile(targetPath, this.toString(tabWidth), encoding, (err) => {
+						if (err) {
+							reject(err);
+						} else {
+							const promiseList = this.baseList.map((subInfo) => {
+								return subInfo.save(PATH.dirname(targetPath), _option);
+							});
+							resolve(Promise.all(promiseList));
+						}
 					});
 				}
 			});
 		});
 	}
 
-	toString() {
-		return 'hello 123';
+	toString(tabWidth: number = 4): string {
+		let str: string = this.kv.toString(tabWidth);
+		const baseStrList: Array<string> = this.baseList.map(({ relativePath }) => `#base "${relativePath}"`);
+
+		if (baseStrList.length) {
+			str = `${baseStrList.join('\n')}\n\n${str}`;
+		}
+
+		return str;
 	}
 }
 
