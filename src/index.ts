@@ -1,3 +1,9 @@
+export interface BaseOption {
+	encoding?: string,
+	skipBase?: boolean,
+	skipFail?: boolean,
+}
+
 export class KVFileInfo {
 	kv: KV;
 	path: string = '';
@@ -215,10 +221,11 @@ export class KV {
 		return getKV(charList, 0, charList.length).kv;
 	}
 
-	static baseLoad(path, encoding = 'utf8'): Promise<KVFileInfo> {
+	static baseLoad(path, option: BaseOption = {}): Promise<KVFileInfo> {
 		const FS = require('fs');
 		const PATH = require('path');
 		const myPath = PATH.resolve(path);
+		const { encoding = 'utf8', skipBase = false, skipFail = false } = option;
 
 		return new Promise((resolve, reject) => {
 			FS.readFile(myPath, encoding, (err, data) => {
@@ -235,17 +242,39 @@ export class KV {
 						return false;
 					}
 					return true;
-				}).reduce((arr, line) => arr.concat(Array.from(line)), []);
+				}).reduce((arr, line) => arr.concat(Array.from(line), '\n'), []);
 
 				const kv = KV.parse(charArr);
 				const kvFileInfo: KVFileInfo = new KVFileInfo(kv, myPath);
-				resolve(kvFileInfo);
+
+				if (skipBase) {
+					resolve(kvFileInfo);
+				} else {
+					const dirName = PATH.dirname(myPath);
+					const promiseList = baseList.map((basePath, index) => {
+						const subPath = PATH.resolve(dirName, basePath);
+						return KV.baseLoad(subPath, option).then((subKvFileInfo) => {
+							kvFileInfo.baseList[index] = subKvFileInfo;
+						}).catch((err) => {
+							if (skipFail) {
+								kvFileInfo.baseList[index] = new KVFileInfo(null, subPath);
+								return Promise.resolve();
+							}
+							return Promise.reject(err);
+						});
+					});
+					Promise.all(promiseList).then(() => {
+						resolve(kvFileInfo);
+					}, (err) => {
+						reject(err);
+					});
+				}
 			});
 		});
 	}
 
 	static load(path, encoding = 'utf8'): Promise<KV> {
-		return KV.baseLoad(path, encoding).then(({ kv }) => kv);
+		return KV.baseLoad(path, { encoding, skipBase: true }).then(({ kv }) => kv);
 	}
 
 	get isList() {
