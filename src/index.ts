@@ -413,6 +413,60 @@ export class KV {
 
 		return kv;
 	}
+
+	toTabString(tabCount: number = 0, tabWidth: number = 4, maxWidth: number = 0): string {
+		const tabIndent = '\t'.repeat(tabCount);
+		let str = '';
+
+		// Comment
+		if (this.comment) {
+			str = this.comment.split('\n')
+				.map(line => `${tabIndent}// ${line}`).join('\n');
+			str += '\n';
+		}
+
+		// Key
+		str += `${tabIndent}"${this.key}"`;
+
+		if (this.isList) {
+			str += ' {';
+
+			const subList = <Array<KV>>this.value;
+			const maxKeyLen = subList.reduce((maxLen, subKV) => {
+				if (subKV.isList) return maxLen;
+				return Math.max(maxLen, subKV.key.length);
+			}, 0);
+
+			if (subList.length) {
+				str += subList
+					.map(subKV => (
+						`\n${subKV.toTabString(tabCount + 1, tabWidth, maxKeyLen)}`
+					))
+					.join('');
+
+				str += `\n${tabIndent}}`;
+			} else {
+				str += '}';
+			}
+		} else {
+			let desSpace = '\t';
+			if (maxWidth > 0) {
+				// Calculate length
+				const totalWidth = Math.ceil((maxWidth + 2 + 1) / tabWidth) * tabWidth;
+
+				const restWidth = totalWidth - this.key.length - 2;
+				const kvTabCount = Math.ceil(restWidth / tabWidth);
+				desSpace = '\t'.repeat(kvTabCount);
+			}
+			str += `${desSpace}"${this.value}"`;
+		}
+
+		return str;
+	}
+
+	toString(tabWidth: number = 4): string {
+		return this.toTabString(0, tabWidth);
+	}
 }
 
 export default KV;

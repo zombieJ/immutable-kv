@@ -1,6 +1,6 @@
 {
   "name": "immutable-kv",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Valve KV parser",
   "main": "src/index.js",
   "scripts": {
