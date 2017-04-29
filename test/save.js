@@ -10,7 +10,7 @@ describe.only('KVFileInfo Save Test', () => {
 		const promise = KV
 			.baseLoad(PATH.resolve(__dirname, 'res/kv_base.txt'))
 			.then((info) => {
-				return info.save('utf8', targetPath);
+				return info.save(targetPath);
 			});
 
 		return promise;

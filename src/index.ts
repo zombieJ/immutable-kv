@@ -1,6 +1,7 @@
 // ======================================================================
 // =                             KVFileInfo                             =
 // ======================================================================
+import {type} from "os";
 export interface SaveOption {
 	encoding?: string
 }
@@ -74,10 +75,10 @@ export class KVFileInfo {
 		let _path: string;
 		let _option: SaveOption;
 
-		if (path instanceof SaveOption) {
+		if (typeof path === 'object') {
 			_option = path;
 			_path = undefined;
-		} else if (option) {
+		} else {
 			_option = option;
 			_path = path;
 		}
@@ -95,10 +96,11 @@ export class KVFileInfo {
 			}
 
 			const dirName = PATH.dirname(targetPath);
-			MK_DIR(dirName, function (err) {
+			MK_DIR(dirName, (err) => {
 				if (err) {
 					reject(err);
 				} else {
+					console.log('~>', targetPath);
 					FS.writeFile(targetPath, this.toString(), encoding, (err) => {
 						if (err) reject(err);
 						resolve();
@@ -106,6 +108,10 @@ export class KVFileInfo {
 				}
 			});
 		});
+	}
+
+	toString() {
+		return 'hello 123';
 	}
 }
 
