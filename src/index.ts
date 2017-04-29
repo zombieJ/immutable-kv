@@ -1,4 +1,15 @@
-function isEmpty(arr, i) {
+export class KVFileInfo {
+	kv: KV;
+	path: string = '';
+	baseList: Array<KVFileInfo> = [];
+
+	constructor(kv, path) {
+		this.kv = kv;
+		this.path = path;
+	}
+}
+
+	function isEmpty(arr, i) {
 	const char = arr[i];
 	if (['\t', ' ', '\r', '\n'].includes(char)) return true;
 }
@@ -187,7 +198,8 @@ function getKV(arr, start, end) {
 	};
 }
 
-class KV {
+const BASE_MATCH = /^\s*#base\s+"([^"]*)"/;
+export class KV {
 	_key: string;
 	_value: string | Array<KV>;
 	_comment: string;
@@ -198,9 +210,42 @@ class KV {
 		this._comment = comment;
 	}
 
-	static parse(str, path) {
+	static parse(str: String | Array<String>): KV {
 		const charList = Array.from(str);
 		return getKV(charList, 0, charList.length).kv;
+	}
+
+	static baseLoad(path, encoding = 'utf8'): Promise<KVFileInfo> {
+		const FS = require('fs');
+		const PATH = require('path');
+		const myPath = PATH.resolve(path);
+
+		return new Promise((resolve, reject) => {
+			FS.readFile(myPath, encoding, (err, data) => {
+				if (err) {
+					reject(err);
+					return;
+				}
+				const lines = data.split(/[\r\n]+/);
+				const baseList = [];
+				const charArr = lines.filter((line = '') => {
+					const match = line.match(BASE_MATCH);
+					if (match && match[1] !== undefined) {
+						baseList.push(match[1]);
+						return false;
+					}
+					return true;
+				}).reduce((arr, line) => arr.concat(Array.from(line)), []);
+
+				const kv = KV.parse(charArr);
+				const kvFileInfo: KVFileInfo = new KVFileInfo(kv, myPath);
+				resolve(kvFileInfo);
+			});
+		});
+	}
+
+	static load(path, encoding = 'utf8'): Promise<KV> {
+		return KV.baseLoad(path, encoding).then(({ kv }) => kv);
 	}
 
 	get isList() {

@@ -1,0 +1,322 @@
+// Dota Heroes File
+"DOTAAbilities"
+{
+	"Version"		"1"
+
+	"MyAbility_unit"
+	{
+		// 基础的定义，如果技能是单位目标还是无目标，单位目标的类型是什么
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_UNIT_TARGET"
+		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_BASIC | DOTA_UNIT_TARGET_HERO"
+		"AbilityUnitDamageType"			"DAMAGE_TYPE_PURE"
+		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_NOT_MAGIC_IMMUNE_ALLIES"
+		"BaseClass"				 		"ability_datadriven"
+		"AbilityTextureName"			"juggernaut_blade_dance"
+
+		// 施法前摇，如果技能行为(AbilityBehavior)是DOTA_ABILITY_BEHAVIOR_IMMEDIATE就无效了
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCastPoint"				"0.3"
+		"AbilityCastRange"				"1000"
+		"AbilityCastAnimation"			"ACT_DOTA_ATTACK_EVENT"
+
+		// 技能CD
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCooldown"				"1.0 2.0 3.0 4.0"
+
+		// 技能施法所需魔法值
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityManaCost"				"1"	//这样写的话就是默认此技能所有等级的魔法值都是1，以上同理
+
+		"OnSpellStart"
+		{
+			"TrackingProjectile"
+			{
+				"Target"			"TARGET"
+				"EffectName"		"particles\units\heroes\hero_sven\sven_spell_storm_bolt.vpcf"
+				"Dodgeable"			"0"
+				"ProvidesVision"	"1"
+				"VisionRadius"		"300"
+				"MoveSpeed"			"1100"
+				"SourceAttachment"	"DOTA_PROJECTILE_ATTACHMENT_ATTACK_1"
+			}
+
+			"FireSound"
+			{
+				"EffectName"	"Hero_Sven.StormBolt"
+				"Target"		"CASTER"
+			}
+
+			"ApplyModifier"
+			{
+				"ModifierName"		"modifier_ability_unit_caster"
+				"Target"			"CASTER"
+			}
+		}
+
+		"OnProjectileHitUnit"
+		{
+			"FireSound"
+			{
+				"EffectName"	"Hero_Sven.StormBoltImpact"
+				"Target"		"TARGET"
+			}
+
+			"Damage"
+			{
+				"Target"
+				{
+					"Types"			"DOTA_UNIT_TARGET_BASIC|DOTA_UNIT_TARGET_HERO"
+					"teams"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
+					"flags"			"DOTA_UNIT_TARGET_FLAG_NOT_MAGIC_IMMUNE_ALLIES"
+					"Radius"		"%radius"
+					"Center"		"TARGET"
+				}
+				"Type"		"DAMAGE_TYPE_MAGICAL"
+				"Damage"	"%damage"
+			}
+
+			"ApplyModifier"
+			{
+				"ModifierName"		"modifier_ability_unit_target"
+				"Target"			"TARGET"
+			}
+		}
+
+		"Modifiers"
+		{
+			"modifier_ability_unit_caster"
+			{
+				"Duration"		"10"
+				"Properties"
+				{
+					"MODIFIER_PROPERTY_DAMAGEOUTGOING_PERCENTAGE"	"50"
+				}
+			}
+
+			"modifier_ability_unit_target"
+			{
+				"IsDebuff"		"1"
+				"Attributes"	"MODIFIER_ATTRIBUTE_MULTIPLE"
+				"Duration"		"10"
+				"Properties"
+				{
+					"MODIFIER_PROPERTY_PHYSICAL_ARMOR_BONUS"	"-25"
+				}
+
+				"OnCreated"
+				{
+					"Stun"
+					{
+						"Target"
+						{
+							"Types"			"DOTA_UNIT_TARGET_BASIC|DOTA_UNIT_TARGET_HERO"
+							"teams"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
+							"flags"			"DOTA_UNIT_TARGET_FLAG_NOT_MAGIC_IMMUNE_ALLIES"
+							"Radius"		"%radius"
+							"Center"		"TARGET"
+						}
+						"Duration"	"%duration"
+					}
+				}
+			}
+		}
+
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilitySpecial"
+		{
+			"01"
+			{
+				"var_type"		"FIELD_INTEGER"
+				"duration"		"2"
+			}
+			"02"
+			{
+				"var_type"		"FIELD_FLOAT"
+				"radius"		"300 400 500 600"		//四个技能等级的眩晕和伤害作用范围
+			}
+			"03"
+			{
+				"var_type"		"FIELD_FLOAT"
+				"damage"		"100"					//四个技能等级都是伤害
+			}
+		}
+	}
+
+
+	"MyAbility_null"
+	{
+		// 基础的定义，如果技能是单位目标还是无目标，单位目标的类型是什么
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_NO_TARGET"
+		"AbilityUnitTargetType"			"DOTA_UNIT_TARGET_BASIC | DOTA_UNIT_TARGET_HERO"
+		"AbilityUnitDamageType"			"DAMAGE_TYPE_PURE"
+		"AbilityUnitTargetTeam"			"DOTA_UNIT_TARGET_TEAM_ENEMY"
+		"AbilityUnitTargetFlags"		"DOTA_UNIT_TARGET_FLAG_NOT_MAGIC_IMMUNE_ALLIES"
+		"BaseClass"				 		"ability_datadriven"
+		"AbilityTextureName"			"juggernaut_blade_fury"
+
+		// 施法前摇，如果技能行为(AbilityBehavior)是DOTA_ABILITY_BEHAVIOR_IMMEDIATE就无效了
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCastPoint"				"0"
+
+		// 技能CD
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCooldown"				"1.0 2.0 3.0 4.0"
+
+		// 技能施法所需魔法值
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityManaCost"				"0.5"
+
+		"OnSpellStart"
+		{
+			"ApplyMotionController"
+		    {
+		    	"Duration"	"1"
+		        "ScriptFile"		"scripts/vscripts/MyAbility.lua"
+		        "HorizontalControlFunction"		"MyAbility_null_1"
+		        "VerticalControlFunction" 	"MyAbility_null_1"
+		        "Target"
+				{
+					"Types"		"DOTA_UNIT_TARGET_BASIC|DOTA_UNIT_TARGET_HERO"
+					"Teams"		"DOTA_UNIT_TARGET_TEAM_ENEMY"
+					"Flags"		"DOTA_UNIT_TARGET_FLAG_NONE"
+					"Center"	"CASTER"
+					"Radius"	"1000"
+				}
+		    }
+		}
+
+
+		"Modifiers"
+		{
+
+		}
+
+		// Special
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilitySpecial"
+		{
+			"01"
+			{
+				"var_type"		"FIELD_INTEGER"
+				"damage"		"100 200 300 400"
+			}
+			"02"
+			{
+				"var_type"		"FIELD_INTEGER"
+				"radius"		"400"
+			}
+		}
+	}
+
+	"MyAbility_point"
+	{
+		// 基础的定义，如果技能是单位目标还是无目标，单位目标的类型是什么
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_POINT"
+		"BaseClass"				 		"ability_datadriven"
+		"AbilityTextureName"			"juggernaut_omni_slash"
+
+		// 施法前摇，如果技能行为(AbilityBehavior)是DOTA_ABILITY_BEHAVIOR_IMMEDIATE就无效了
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCastPoint"				"0"
+
+		// 技能CD
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCooldown"				"1"
+
+		// 技能施法所需魔法值
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityManaCost"				"0"
+
+		"OnSpellStart"
+		{
+			"RunScript"
+			{
+				"ScriptFile"	"scripts/vscripts/MyAbility.lua"
+				"Function"		"MyAbility_point"
+				"Target"		"POINT"
+			}
+		}
+
+		"Modifiers"
+		{
+			"create_point"
+			{
+				"Duration"	"5"
+				"ThinkInterval"	"0.5"
+				"OnIntervalThink"
+				{
+					"Damage"
+					{
+						"Type"		"DAMAGE_TYPE_PURE"
+						"Damage"	"50"
+						"Target"
+						{
+							"Types"		"DOTA_UNIT_TARGET_BASIC|DOTA_UNIT_TARGET_HERO"
+							"Teams"		"DOTA_UNIT_TARGET_TEAM_ENEMY"
+							"Flags"		"DOTA_UNIT_TARGET_FLAG_NONE"
+							"Center"	"TARGET"
+							"Radius"	"400"
+						}
+					}
+				}
+			}
+		}
+
+		"AbilitySpecial"
+		{
+			"01"
+			{
+				"var_type"		"FIELD_INTEGER"
+				"radius"		"1000"
+			}
+		}
+	}
+
+	"MyAbility_passive"
+	{
+		// 基础的定义，如果技能是单位目标还是无目标，单位目标的类型是什么
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityBehavior"				"DOTA_ABILITY_BEHAVIOR_PASSIVE"
+		"BaseClass"				 		"ability_datadriven"
+		"AbilityTextureName"			"juggernaut_omni_slash"
+
+		// 施法前摇，如果技能行为(AbilityBehavior)是DOTA_ABILITY_BEHAVIOR_IMMEDIATE就无效了
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCastPoint"				"0"
+
+		// 技能CD
+		//-------------------------------------------------------------------------------------------------------------
+		"AbilityCooldown"				"0"
+
+		"Modifiers"
+		{
+			"create_x"
+			{
+				"Passive"	"1"
+				"States"
+				{
+					"MODIFIER_STATE_UNSELECTABLE"	"MODIFIER_STATE_VALUE_ENABLED"
+					"MODIFIER_STATE_INVULNERABLE"	"MODIFIER_STATE_VALUE_ENABLED"
+					"MODIFIER_STATE_NO_UNIT_COLLISION"	"MODIFIER_STATE_VALUE_ENABLED"
+				}
+
+				"OnCreated"
+				{
+					"AttachEffect"
+					{
+						"Target"	"CASTER"
+						"EffectName"	"particles\econ\courier\courier_greevil_green\courier_greevil_green_ambient_3.vpcf"
+						"EffectAttachType"	"follow_overhead"
+					}
+				}
+
+			}
+
+		}
+	}
+}

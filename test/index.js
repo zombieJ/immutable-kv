@@ -1,5 +1,6 @@
 import { assert, deepEqual } from 'chai';
 import KV from '../js/index';
+import path from 'path';
 
 describe('KV Test', () => {
 	it('isList', () => {
@@ -288,5 +289,35 @@ describe('KV Test', () => {
 		const u_kv1 = kv1.setPathComment(['BBB', 'CCC'], 'good show');
 		assert.equal(kv1.getKV(['BBB', 'CCC']).comment, '233');
 		assert.equal(u_kv1.getKV(['BBB', 'CCC']).comment, 'good show');
+	});
+
+	it('load', () => {
+		const promise1 = KV
+			.load(path.resolve(__dirname, 'res/kv.txt'))
+			.then((kv) => {
+				assert.equal(kv.key, 'DOTAAbilities');
+				assert.equal(kv.comment, 'Dota Heroes File');
+				assert.equal(kv.getKV([0]).key, 'Version');
+				assert.equal(kv.getKV([0]).value, '1');
+
+				const kv_a_unit = kv.getKV(['MyAbility_unit']);
+				assert.equal(kv_a_unit.get('AbilityBehavior'), 'DOTA_ABILITY_BEHAVIOR_UNIT_TARGET');
+				assert.equal(kv_a_unit.get('AbilityUnitTargetType'), 'DOTA_UNIT_TARGET_BASIC | DOTA_UNIT_TARGET_HERO');
+				assert.equal(kv_a_unit.get(['OnSpellStart', 'TrackingProjectile', 'TARGET']), 'TARGET');
+				assert.equal(kv_a_unit.get([
+					'Modifiers', 'modifier_ability_unit_target',
+					'OnCreated', 'Stun', 'Target', 'Center'
+				]), 'TARGET');
+			});
+
+		return Promise.all([promise1]);
+	});
+
+	it.only('parse: base', () => {
+		const promise1 = KV
+			.load(path.resolve(__dirname, 'res/kv_base.txt'))
+			.then((kv) => {});
+
+		return promise1;
 	});
 });

@@ -1,0 +1,6 @@
+#base "next\kv1.txt"
+
+"root"{
+	"aaa""111"
+	"bbb""222"
+}
