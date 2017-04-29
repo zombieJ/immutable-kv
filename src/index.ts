@@ -4,6 +4,7 @@
 export class KVFileInfo {
 	_kv: KV;
 	_path: string = '';
+	_relativePath: string;
 	_baseList: Array<KVFileInfo> = [];
 
 	get kv(): KV {
@@ -12,6 +13,10 @@ export class KVFileInfo {
 
 	get path(): string {
 		return this._path;
+	}
+
+	get relativePath(): string {
+		return this._relativePath;
 	}
 
 	get baseList():Array<KVFileInfo> {
@@ -79,6 +84,7 @@ export interface BaseOption {
 	encoding?: string,
 	skipBase?: boolean,
 	skipFail?: boolean,
+	parentDir?: string,
 }
 
 function getComment(arr, start, end) {
@@ -286,7 +292,10 @@ export class KV {
 		const FS = require('fs');
 		const PATH = require('path');
 		const myPath = PATH.resolve(path);
-		const { encoding = 'utf8', skipBase = false, skipFail = false } = option;
+		const {
+			encoding = 'utf8', parentDir,
+			skipBase = false, skipFail = false
+		} = option;
 
 		return new Promise((resolve, reject) => {
 			FS.readFile(myPath, encoding, (err, data) => {
@@ -307,14 +316,21 @@ export class KV {
 
 				const kv = KV.parse(charArr);
 				const kvFileInfo: KVFileInfo = new KVFileInfo(kv, myPath);
+				if (parentDir) {
+					kvFileInfo._relativePath = PATH.relative(parentDir, myPath);
+				}
 
 				if (skipBase) {
 					resolve(kvFileInfo);
 				} else {
 					const dirName = PATH.dirname(myPath);
+					const subOption: BaseOption = {
+						...option, parentDir: dirName,
+					};
+
 					const promiseList = baseList.map((basePath, index) => {
 						const subPath = PATH.resolve(dirName, basePath);
-						return KV.baseLoad(subPath, option).then((subKvFileInfo) => {
+						return KV.baseLoad(subPath, subOption).then((subKvFileInfo) => {
 							kvFileInfo.baseList[index] = subKvFileInfo;
 						}).catch((err) => {
 							if (skipFail) {

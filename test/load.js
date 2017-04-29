@@ -2,7 +2,11 @@ import { assert, deepEqual } from 'chai';
 import KV from '../js/index';
 import path from 'path';
 
-describe('KV Load Test', () => {
+function normalPath(path) {
+	return path.replace(/[\\/]/g, '|');
+}
+
+describe.only('KV Load Test', () => {
 	it('load', () => {
 		const promise1 = KV
 			.load(path.resolve(__dirname, 'res/kv.txt'))
@@ -34,24 +38,30 @@ describe('KV Load Test', () => {
 	it('load: base', () => {
 		return KV
 			.baseLoad(path.resolve(__dirname, 'res/kv_base.txt'))
-			.then(({ kv, baseList }) => {
+			.then(({ kv, relativePath, baseList }) => {
 				assert.equal(kv.key, 'root');
 				assert.equal(kv.get('aaa'), '111');
 				assert.equal(kv.get('bbb'), '222');
 
-				const sub1_KV = baseList[0].kv;
-				const sub1_Path = baseList[0].path.replace(/\\/g, '|');
+				const sub1_Info = baseList[0];
+				const sub1_KV = sub1_Info.kv;
+				const sub1_Path = normalPath(sub1_Info.path);
 				assert.isTrue(sub1_Path.includes('res|next|kv1.txt'));
 				assert.equal(sub1_KV.key, 'ccc');
 				assert.equal(sub1_KV.get('ddd'), '');
 
-				const sub2_Info = baseList[0].baseList[0];
+				const sub2_Info = sub1_Info.baseList[0];
 				assert.isDefined(sub2_Info);
 				const sub2_KV = sub2_Info.kv;
-				const sub2_Path = sub2_Info.path.replace(/\\/g, '|');
+				const sub2_Path = normalPath(sub2_Info.path);
 				assert.isTrue(sub2_Path.includes('res|next|kv2.txt'));
 				assert.equal(sub2_KV.key, 'eee');
 				assert.equal(sub2_KV.get('fff'), '233');
+
+				// Relative path
+				assert.equal(relativePath);
+				assert.equal(normalPath(sub1_Info.relativePath), 'next|kv1.txt');
+				assert.equal(normalPath(sub2_Info.relativePath), 'kv2.txt');
 			});
 	});
 
@@ -73,7 +83,7 @@ describe('KV Load Test', () => {
 				assert.equal(kv.key, 'root');
 				assert.equal(kv.value, 'nice\\"try');
 
-				const subPath = baseList[0].path.replace(/\\/g, '|');
+				const subPath = normalPath(baseList[0].path);
 				assert.isTrue(subPath.includes('res|next|kv_not_exist.txt'));
 				assert.isNull(baseList[0].kv);
 			});
