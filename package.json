@@ -5,7 +5,8 @@
   "main": "src/index.js",
   "scripts": {
     "pretest": "tsc",
-    "test": "mocha --recursive --compilers js:babel-core/register"
+    "test": "mocha --recursive --compilers js:babel-core/register",
+    "prepublish": "tsc"
   },
   "author": "zombieJ",
   "license": "MIT",
