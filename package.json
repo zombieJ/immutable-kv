@@ -1,14 +1,17 @@
 {
   "name": "immutable-kv",
   "version": "1.0.0",
-  "description": "Valve KV parser",
+  "description": "Valve immutable KV module",
   "main": "src/index.js",
   "scripts": {
     "pretest": "tsc",
     "test": "mocha --recursive --compilers js:babel-core/register"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "zombieJ",
+  "license": "MIT",
+  "dependencies": {
+    "mkdirp": "^0.5.1"
+  },
   "devDependencies": {
     "@types/node": "^7.0.14",
     "babel-core": "^6.24.1",
@@ -19,8 +22,5 @@
     "del": "^2.2.2",
     "mocha": "^3.3.0",
     "typescript": "^2.3.1"
-  },
-  "dependencies": {
-    "mkdirp": "^0.5.1"
   }
 }
