@@ -338,6 +338,7 @@ export class KV {
 		this._comment = comment;
 	}
 
+	// ============================== Parser ==============================
 	static parse(str: String | Array<String>): KV {
 		const charList = Array.from(str);
 		return getKV(charList, 0, charList.length).kv;
@@ -409,6 +410,7 @@ export class KV {
 		return KV.baseLoad(path, { encoding, skipBase: true }).then(({ kv }) => kv);
 	}
 
+	// ============================== Props ===============================
 	get isList() {
 		return Array.isArray(this.value);
 	}
@@ -429,6 +431,7 @@ export class KV {
 		return new KV(this.key, this.value, this.comment);
 	}
 
+	// ============================= function =============================
 	getIndex(key) {
 		if (!this.isList) return -1;
 
@@ -439,22 +442,6 @@ export class KV {
 
 		const myKey = String(key).toUpperCase();
 		return (<Array<KV>>this.value).findIndex(({ key: _key }) => myKey === String(_key).toUpperCase());
-	}
-
-	getKV(path) {
-		const myPath = Array.isArray(path) ? path : [path];
-		if (myPath.length === 0) return this;
-
-		const [key, ...restPath] = myPath;
-		const index = this.getIndex(key);
-		if (index === -1) return undefined;
-
-		return (<KV>this.value[index]).getKV(restPath);
-	}
-
-	get(path) {
-		const kv = this.getKV(path);
-		return kv ? kv.value : undefined;
 	}
 
 	setKey(val) {
@@ -475,6 +462,51 @@ export class KV {
 		return kv;
 	}
 
+	// =============================== path ===============================
+	getKV(path) {
+		const myPath = Array.isArray(path) ? path : [path];
+		if (myPath.length === 0) return this;
+
+		const [key, ...restPath] = myPath;
+		const index = this.getIndex(key);
+		if (index === -1) return undefined;
+
+		return (<KV>this.value[index]).getKV(restPath);
+	}
+
+	get(path) {
+		const kv = this.getKV(path);
+		return kv ? kv.value : undefined;
+	}
+
+	update(path, updater: KV | ((old: KV) => KV)) {
+		const myPath = Array.isArray(path) ? path : [path];
+		if(myPath.length === 0) {
+			return typeof updater === 'function' ? updater(this) : updater;
+		} else if (myPath.length === 1) {
+			const index = this.getIndex(myPath[0]);
+			if (index === -1) {
+				console.error('[KV] Path not found:', myPath[0], this.value);
+				return this;
+			}
+
+			const oldKV = <KV>this.value[index];
+			const newKV = oldKV.update([], updater);
+			const newValue = (<Array<KV>>this.value).concat();
+			newValue[index] = newKV;
+			return this.setValue(newValue);
+		} else {
+			const kv = this.clone();
+			const [key, ...restPath] = myPath;
+			const index = this.getIndex(key);
+
+			kv._value = (<Array<KV>>kv.value).concat();
+			kv._value[index] = kv._value[index].update(restPath, updater);
+
+			return kv;
+		}
+	}
+
 	set(path, val) {
 		let _path = path;
 		let _val = val;
@@ -485,21 +517,7 @@ export class KV {
 			_val = path;
 		}
 
-		const myPath = Array.isArray(_path) ? _path : [_path];
-		if (myPath.length === 0) return this.setValue(_val);
-
-		const [key, ...restPath] = myPath;
-		const index = this.getIndex(key);
-		if (index === -1) {
-			console.error('[KV] Path not found:', key, this.value);
-			return this;
-		}
-
-		const kv = this.clone();
-		kv._value = (<Array<KV>>kv._value).concat();
-		kv._value[index] = kv._value[index].set(restPath, _val);
-
-		return kv;
+		return this.update(_path, kv => kv.setValue(_val));
 	}
 
 	getPathValue(path) {
@@ -511,41 +529,32 @@ export class KV {
 	}
 
 	setPathKey(path, val) {
-		const myPath = Array.isArray(path) ? path : [path];
-		if (myPath.length === 0) return this.setKey(val);
-
-		const [key, ...restPath] = myPath;
-		const index = this.getIndex(key);
-		if (index === -1) {
-			console.error('[KV] Path not found:', key, this.value);
-			return this;
-		}
-
-		const kv = this.clone();
-		kv._value = (<Array<KV>>kv._value).concat();
-		kv._value[index] = kv._value[index].setPathKey(restPath, val);
-
-		return kv;
+		return this.update(path, kv => kv.setKey(val));
 	}
 
 	setPathComment(path, val) {
-		const myPath = Array.isArray(path) ? path : [path];
-		if (myPath.length === 0) return this.setComment(val);
+		return this.update(path, kv => kv.setComment(val));
+	}
 
-		const [key, ...restPath] = myPath;
-		const index = this.getIndex(key);
-		if (index === -1) {
-			console.error('[KV] Path not found:', key, this.value);
+	remove(path) {
+		const myPath = (Array.isArray(path) ? path : [path]).concat();
+		if (myPath.length === 0) {
+			console.error('[KV] Remove should have a key');
 			return this;
 		}
 
-		const kv = this.clone();
-		kv._value = (<Array<KV>>kv._value).concat();
-		kv._value[index] = kv._value[index].setPathComment(restPath, val);
+		const key = myPath.pop();
+		return this.update(myPath, (kv) => {
+			const index = kv.getIndex(key);
+			if (index === -1) return kv;
 
-		return kv;
+			const newValue = (<Array<KV>>kv.value).concat();
+			newValue.splice(index, 1);
+			return kv.setValue(newValue);
+		});
 	}
 
+	// ============================== String ==============================
 	toTabString(tabCount: number = 0, tabWidth: number = 4, maxWidth: number = 0): string {
 		const tabIndent = '\t'.repeat(tabCount);
 		let str = '';

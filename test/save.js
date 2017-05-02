@@ -4,7 +4,7 @@ import { KV } from '../js/index';
 const FS = require('fs');
 const PATH = require('path');
 
-describe.only('KVFileInfo Save Test', () => {
+describe('KVFileInfo Save Test', () => {
 	const DEL = require('del');
 	DEL.sync(PATH.resolve(__dirname, 'out'));
 

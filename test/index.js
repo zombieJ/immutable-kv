@@ -83,6 +83,28 @@ describe('KV Operate Test', () => {
 		assert.equal(kv.get('not exist'), undefined);
 	});
 
+	it('update', () => {
+		const kv = new KV('a', 'b');
+		const kv2 = kv.update([], new KV('c', 'd'));
+
+		assert.equal(kv.key, 'a');
+		assert.equal(kv.value, 'b');
+		assert.equal(kv2.key, 'c');
+		assert.equal(kv2.value, 'd');
+
+		const kv3 = KV.parse(`"root" {
+			"aaa" "111"
+			"bbb" {
+				"ccc"{
+					"ddd" "666"
+				}
+			}
+		}`);
+		const kv4 = kv3.update([1, 'ccc', 'ddd'], kv => kv.setValue('777'));
+		assert.equal(kv3.get(['bbb', 'CcC', 'DDD']), '666');
+		assert.equal(kv4.get(['bbb', 'CcC', 'DDD']), '777');
+	});
+
 	it('setKey', () => {
 		const kv = new KV('aaa', 'bbb');
 		const kv2 = kv.setKey('ccc');
@@ -183,5 +205,19 @@ describe('KV Operate Test', () => {
 		const u_kv1 = kv1.setPathComment(['BBB', 'CCC'], 'good show');
 		assert.equal(kv1.getKV(['BBB', 'CCC']).comment, '233');
 		assert.equal(u_kv1.getKV(['BBB', 'CCC']).comment, 'good show');
+	});
+
+	it('remove', () => {
+		const kv = KV.parse(`
+		"root" {
+			"ddd" {
+				"0" "0"
+				"1" "1"
+				"2" "2"
+			}
+		}`);
+		const kv2 = kv.remove(['ddd', '1']);
+		assert.equal(kv.get('ddd').length, 3);
+		assert.equal(kv2.get('ddd').length, 2);
 	});
 });

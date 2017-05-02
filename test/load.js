@@ -6,7 +6,7 @@ function normalPath(path) {
 	return path.replace(/[\\/]/g, '|');
 }
 
-describe.only('KV Load Test', () => {
+describe('KV Load Test', () => {
 	it('load', () => {
 		const promise1 = KV
 			.load(path.resolve(__dirname, 'res/kv.txt'))
