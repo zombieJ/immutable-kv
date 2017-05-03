@@ -13,25 +13,25 @@ describe('KV Operate Test', () => {
 		assert.isTrue(kv2.isList);
 	});
 
-	it('getIndex', () => {
+	it('findIndex', () => {
 		const kv2_1 = new KV('lvl2_1', '111');
 		const kv2_2 = new KV('lvl2_2', '222');
 		const kv2_3 = new KV('lvl2_3', '333');
 		const kv = new KV('lvl1', [kv2_1, kv2_2, kv2_3]);
 
-		assert.equal(kv.getIndex(-1), -1);
-		assert.equal(kv.getIndex(0), 0);
-		assert.equal(kv.getIndex(1), 1);
-		assert.equal(kv.getIndex(2), 2);
-		assert.equal(kv.getIndex(3), -1);
+		assert.equal(kv.findIndex(-1), -1);
+		assert.equal(kv.findIndex(0), 0);
+		assert.equal(kv.findIndex(1), 1);
+		assert.equal(kv.findIndex(2), 2);
+		assert.equal(kv.findIndex(3), -1);
 
-		assert.equal(kv.getIndex('lvl2_1'), 0);
-		assert.equal(kv.getIndex('LVL2_1'), 0);
-		assert.equal(kv.getIndex('lvl2_2'), 1);
-		assert.equal(kv.getIndex('LVL2_2'), 1);
-		assert.equal(kv.getIndex('lvl2_3'), 2);
-		assert.equal(kv.getIndex('LVL2_3'), 2);
-		assert.equal(kv.getIndex('not exist'), -1);
+		assert.equal(kv.findIndex('lvl2_1'), 0);
+		assert.equal(kv.findIndex('LVL2_1'), 0);
+		assert.equal(kv.findIndex('lvl2_2'), 1);
+		assert.equal(kv.findIndex('LVL2_2'), 1);
+		assert.equal(kv.findIndex('lvl2_3'), 2);
+		assert.equal(kv.findIndex('LVL2_3'), 2);
+		assert.equal(kv.findIndex('not exist'), -1);
 	});
 
 	it('getKV & get & getPathValue', () => {
@@ -219,5 +219,83 @@ describe('KV Operate Test', () => {
 		const kv2 = kv.remove(['ddd', '1']);
 		assert.equal(kv.get('ddd').length, 3);
 		assert.equal(kv2.get('ddd').length, 2);
+	});
+
+	it('insert', () => {
+		{
+			const kv = KV.parse(`
+			"root" {
+				"aaa" "1111"
+				"bbb" "2222"
+			}
+			`);
+			const kv1 = kv.insert(0, new KV('sss', '000'));
+			const kv2 = kv1.insert(-1, new KV('ccc', '3333'));
+			assert.equal(kv.value.length, 2);
+			assert.equal(kv1.value.length, 3);
+			assert.equal(kv2.value.length, 4);
+			assert.equal(kv.get(0), '1111');
+			assert.equal(kv.get(['bbb']), '2222');
+			assert.equal(kv2.getKV(0).key, 'sss');
+			assert.equal(kv2.getKV(0).value, '000');
+			assert.equal(kv2.getKV(3).key, 'ccc');
+			assert.equal(kv2.getKV(3).value, '3333');
+		}
+
+		{
+			const kv = KV.parse(`
+				"111" {
+					"222" {
+						"333" {
+							"a""1"
+							"b""2"
+							"c""3"
+						}
+					}
+				}
+			`);
+			const kv1 = kv.insert(['222', '333', 0], new KV('s', '0'));
+			const kv2 = kv1.insert(['222', '333', -1], new KV('d', '4'));
+			assert.equal(kv.get(['222', '333']).length, 3);
+			assert.equal(kv1.get(['222', '333']).length, 4);
+			assert.equal(kv2.get(['222', '333']).length, 5);
+		}
+	});
+
+	it.only('insert', () => {
+		{
+			const kv = KV.parse(`
+			"root" {
+				"0""0"
+				"1""1"
+				"2""2"
+			}
+			`);
+			const kv2 = kv.switch(0, 2);
+			assert.equal(kv.get(0), '0');
+			assert.equal(kv.get(1), '1');
+			assert.equal(kv.get(2), '2');
+			assert.equal(kv2.get(0), '2');
+			assert.equal(kv2.get(1), '1');
+			assert.equal(kv2.get(2), '0');
+		}
+
+		{
+			const kv = KV.parse(`
+			"111" {
+				"222"{
+					"333" {
+						"a" "0"
+						"b" "1"
+					}
+				}
+			}
+			`);
+			const kv2 = kv.switch([0, 0], 0, 1);
+			assert.equal(kv.get([0, 0, 0]), '0');
+			assert.equal(kv.get([0, 0, 1]), '1');
+			assert.equal(kv2.get([0, 0, 0]), '1');
+			assert.equal(kv2.get([0, 0, 1]), '0');
+		}
 	});
 });

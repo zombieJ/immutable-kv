@@ -1,6 +1,7 @@
 // ======================================================================
 // =                             KVFileInfo                             =
 // ======================================================================
+import {type} from "os";
 export interface SaveOption {
 	encoding?: string;
 	tabWidth?: number;
@@ -432,12 +433,17 @@ export class KV {
 	}
 
 	// ============================= function =============================
-	getIndex(key) {
+	findIndex(key) {
 		if (!this.isList) return -1;
 
 		if (typeof key === 'number') {
-			if (!this.value[key]) return -1;
-			return key;
+			let targetIndex: number = key;
+			if (targetIndex < 0) {
+				const len = this.value.length;
+				targetIndex = (targetIndex + len) % len;
+			}
+			if (!this.value[targetIndex]) return -1;
+			return targetIndex;
 		}
 
 		const myKey = String(key).toUpperCase();
@@ -468,7 +474,7 @@ export class KV {
 		if (myPath.length === 0) return this;
 
 		const [key, ...restPath] = myPath;
-		const index = this.getIndex(key);
+		const index = this.findIndex(key);
 		if (index === -1) return undefined;
 
 		return (<KV>this.value[index]).getKV(restPath);
@@ -484,7 +490,7 @@ export class KV {
 		if(myPath.length === 0) {
 			return typeof updater === 'function' ? updater(this) : updater;
 		} else if (myPath.length === 1) {
-			const index = this.getIndex(myPath[0]);
+			const index = this.findIndex(myPath[0]);
 			if (index === -1) {
 				console.error('[KV] Path not found:', myPath[0], this.value);
 				return this;
@@ -498,7 +504,7 @@ export class KV {
 		} else {
 			const kv = this.clone();
 			const [key, ...restPath] = myPath;
-			const index = this.getIndex(key);
+			const index = this.findIndex(key);
 
 			kv._value = (<Array<KV>>kv.value).concat();
 			kv._value[index] = kv._value[index].update(restPath, updater);
@@ -545,11 +551,67 @@ export class KV {
 
 		const key = myPath.pop();
 		return this.update(myPath, (kv) => {
-			const index = kv.getIndex(key);
+			const index = kv.findIndex(key);
 			if (index === -1) return kv;
 
 			const newValue = (<Array<KV>>kv.value).concat();
 			newValue.splice(index, 1);
+			return kv.setValue(newValue);
+		});
+	}
+
+	insert(path, target: KV) {
+		const myPath = (Array.isArray(path) ? path : [path]).concat();
+		const key = myPath.pop();
+		if (typeof key !== 'number') {
+			console.error('[KV] Insert param must be number index:', key);
+			return this;
+		}
+
+		return this.update(myPath, (kv) => {
+			let index = kv.findIndex(key);
+			if (key < 0) index += 1;
+			if (index === -1) {
+				console.error('[KV] Can not find insert index:', this);
+				return kv;
+			}
+
+			const newValue = (<Array<KV>>kv.value).concat();
+			newValue.splice(index, 0, target);
+			return kv.setValue(newValue);
+		});
+	}
+
+	switch(path: string | Array<string>, index1: number, index2?: number): KV;
+	switch(index1: number, index2?: number): KV;
+
+	switch(path: string | Array<string> | number, index1: number, index2?: number): KV {
+		let _path = path;
+		let _index1 = index1;
+		let _index2 = index2;
+		if (arguments.length === 2) {
+			_index2 = _index1;
+			_index1 = <number>_path;
+			_path = [];
+		}
+
+		if (typeof _index1 !== 'number' || typeof _index2 !== 'number') {
+			console.error('[KV] Switch index must be number:', _index1, _index2);
+			return this;
+		}
+
+		const myPath = Array.isArray(_path) ? _path : [_path];
+		return this.update(myPath, (kv) => {
+			if (!kv.isList) {
+				console.error('[KV] Value is not a list. Can not switch:', kv);
+				return kv;
+			}
+
+			const newValue = (<Array<KV>>kv.value).concat();
+			const val1 = newValue[_index1];
+			const val2 = newValue[_index2];
+			newValue[_index1] = val2;
+			newValue[_index2] = val1;
 			return kv.setValue(newValue);
 		});
 	}
