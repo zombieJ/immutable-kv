@@ -1,8 +1,8 @@
 {
   "name": "immutable-kv",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Valve immutable KV module",
-  "main": "src/index.js",
+  "main": "js/index.js",
   "scripts": {
     "pretest": "tsc",
     "test": "mocha --recursive --compilers js:babel-core/register",
