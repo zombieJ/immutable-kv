@@ -19,7 +19,7 @@ describe('KV Operate Test', () => {
 		const kv2_3 = new KV('lvl2_3', '333');
 		const kv = new KV('lvl1', [kv2_1, kv2_2, kv2_3]);
 
-		assert.equal(kv.findIndex(-1), -1);
+		assert.equal(kv.findIndex(-1), 2);
 		assert.equal(kv.findIndex(0), 0);
 		assert.equal(kv.findIndex(1), 1);
 		assert.equal(kv.findIndex(2), 2);
@@ -42,7 +42,7 @@ describe('KV Operate Test', () => {
 		const kv_3 = new KV('l_3', '333');
 		const kv = new KV('root', [kv_1, kv_2, kv_3]);
 
-		assert.equal(kv.getKV(-1), undefined);
+		assert.equal(kv.getKV(-1), kv_3);
 		assert.equal(kv.getKV(0), kv_1);
 		assert.equal(kv.getKV(1), kv_2);
 		assert.equal(kv.getKV(2), kv_3);
@@ -62,7 +62,7 @@ describe('KV Operate Test', () => {
 		assert.equal(kv.getKV([2, 'not exist']), undefined);
 		assert.equal(kv.getKV('not exist'), undefined);
 
-		assert.equal(kv.get(-1), undefined);
+		assert.equal(kv.get(-1), '333');
 		assert.equal(kv.get(0), '111');
 		assert.equal(kv.get(1), kv_2.value);
 		assert.equal(kv.get(2), '333');
@@ -103,6 +103,14 @@ describe('KV Operate Test', () => {
 		const kv4 = kv3.update([1, 'ccc', 'ddd'], kv => kv.setValue('777'));
 		assert.equal(kv3.get(['bbb', 'CcC', 'DDD']), '666');
 		assert.equal(kv4.get(['bbb', 'CcC', 'DDD']), '777');
+
+		const kv5 = KV.parse(`"root" {
+			"a" "1"
+		}`);
+		const kv6 = kv5.update('a', kv => kv.setValue('111'));
+		const kv7 = kv6.update('b', kv => kv.setValue('222'));
+		assert.equal(kv7.get('a'), '111');
+		assert.equal(kv7.get('b'), '222');
 	});
 
 	it('setKey', () => {
@@ -125,7 +133,7 @@ describe('KV Operate Test', () => {
 		assert.equal(kv2.value, 'ccc');
 	});
 
-	it('set || setPathValue', () => {
+	it.only('set || setPathValue', () => {
 		const kv_1_1_0 = new KV('l_1_1_0', 'aaa');
 
 		const kv_1_0 = new KV('l_1_0', '10');
@@ -162,6 +170,22 @@ describe('KV Operate Test', () => {
 		const u_kv_1_1_0 = kv.setPathValue([1, 1, 0], 'end');
 		assert.equal(u_kv_1_1_0.get([1, 1, 0]), 'end');
 		assert.equal(kv.get([1, 1, 'l_1_1_0']), 'aaa');
+
+		const kv2 = KV.parse(`"root" {
+			"aaa" {
+				"bbb" {
+					"ccc" {}
+				}
+			}
+		}`);
+		const kv3 = kv.setPathValue(['aaa', 'bbb', 'ccc', 'ddd'], '233');
+		assert.equal(kv2.get(['aaa', 'bbb', 'ccc', 'ddd']), undefined);
+		assert.equal(kv3.get(['aaa', 'bbb', 'ccc', 'ddd']), '233');
+
+		const kv4 = new KV('root', []);
+		const kv5 = kv4.setPathValue(['a', 'b', 'c'], '333');
+		assert.equal(kv4.get(['a', 'b', 'c']), undefined);
+		assert.equal(kv5.get(['a', 'b', 'c']), '333');
 	});
 
 	it('setPathKey', () => {
@@ -262,7 +286,7 @@ describe('KV Operate Test', () => {
 		}
 	});
 
-	it.only('insert', () => {
+	it('insert', () => {
 		{
 			const kv = KV.parse(`
 			"root" {

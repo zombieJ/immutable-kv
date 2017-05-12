@@ -490,10 +490,16 @@ export class KV {
 		if(myPath.length === 0) {
 			return typeof updater === 'function' ? updater(this) : updater;
 		} else if (myPath.length === 1) {
-			const index = this.findIndex(myPath[0]);
+			const key = myPath[0];
+			const index = this.findIndex(key);
 			if (index === -1) {
-				console.error('[KV] Path not found:', myPath[0], this.value);
-				return this;
+				if (typeof key === 'number' || !Array.isArray(this.value)) {
+					console.error('[KV] Path not found:', myPath[0], this.value);
+					return this;
+				}
+
+				const newSubKV = typeof updater === 'function' ? updater(new KV(key)) : updater;
+				return this.setValue([...this.value, newSubKV]);
 			}
 
 			const oldKV = <KV>this.value[index];
@@ -502,10 +508,21 @@ export class KV {
 			newValue[index] = newKV;
 			return this.setValue(newValue);
 		} else {
-			const kv = this.clone();
 			const [key, ...restPath] = myPath;
 			const index = this.findIndex(key);
+			if (index === -1) {
+				if (typeof key === 'number' || !Array.isArray(this.value)) {
+					console.error('[KV] Path not found:', myPath[0], this.value);
+					return this;
+				}
 
+				const kv = this.clone();
+				const newSubKV = (new KV(key, [])).update(restPath, updater);
+				kv._value = (<Array<KV>>kv.value).concat(newSubKV);
+				return kv;
+			}
+
+			const kv = this.clone();
 			kv._value = (<Array<KV>>kv.value).concat();
 			kv._value[index] = kv._value[index].update(restPath, updater);
 
